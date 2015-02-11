@@ -1,17 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Threading;
+﻿using Gadgeteer.Modules.GHIElectronics;
 using Microsoft.SPOT;
-using Microsoft.SPOT.Presentation;
-using Microsoft.SPOT.Presentation.Controls;
-using Microsoft.SPOT.Presentation.Media;
-using Microsoft.SPOT.Presentation.Shapes;
-using Microsoft.SPOT.Touch;
-
-using Gadgeteer.Networking;
-using GT = Gadgeteer;
-using GTM = Gadgeteer.Modules;
-using Gadgeteer.Modules.GHIElectronics;
 
 namespace GabTracker
 {
@@ -32,10 +20,26 @@ namespace GabTracker
                 timer.Tick +=<tab><tab>
                 timer.Start();
             *******************************************************************************************/
-
-
+            gps.InvalidPositionReceived += gps_InvalidPositionReceived;
+            gps.NmeaSentenceReceived += gps_NmeaSentenceReceived;
+            gps.PositionReceived += gps_PositionReceived;
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
+        }
+
+        void gps_PositionReceived(GPS sender, GPS.Position e)
+        {
+            Debug.Print("Position Received");
+        }
+
+        void gps_NmeaSentenceReceived(GPS sender, string e)
+        {
+            Debug.Print("NMEA sentence: " + e);
+        }
+
+        void gps_InvalidPositionReceived(GPS sender, EventArgs e)
+        {
+            Debug.Print("Invalid Position Received");
         }
     }
 }
