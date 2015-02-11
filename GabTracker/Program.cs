@@ -20,9 +20,12 @@ namespace GabTracker
                 timer.Tick +=<tab><tab>
                 timer.Start();
             *******************************************************************************************/
+
             gps.InvalidPositionReceived += gps_InvalidPositionReceived;
             gps.NmeaSentenceReceived += gps_NmeaSentenceReceived;
             gps.PositionReceived += gps_PositionReceived;
+            gps.DebugPrintEnabled = true;
+            gps.Enabled = true;
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
         }
