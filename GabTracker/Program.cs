@@ -1,10 +1,21 @@
-﻿using Gadgeteer.Modules.GHIElectronics;
+﻿using Gadgeteer;
+using Gadgeteer.Modules.GHIElectronics;
 using Microsoft.SPOT;
+using System.IO;
+using Microsoft.SPOT.IO;
+using System;
+using GabTracker;
 
 namespace GabTracker
 {
     public partial class Program
     {
+        Timer _timer;
+        double _temperature = -10000;
+        double _humidity = -10000;
+        private StorageDevice _storage;
+        private static string _dataFilePath = @"\SD\AirQuality.TXT";
+
         // This method is run when the mainboard is powered up or reset.   
         void ProgramStarted()
         {
@@ -20,14 +31,71 @@ namespace GabTracker
                 timer.Tick +=<tab><tab>
                 timer.Start();
             *******************************************************************************************/
+            _timer = new Timer(5000, Timer.BehaviorType.RunContinuously);
+            _timer.Tick += _timer_Tick;
 
             gps.InvalidPositionReceived += gps_InvalidPositionReceived;
             gps.NmeaSentenceReceived += gps_NmeaSentenceReceived;
             gps.PositionReceived += gps_PositionReceived;
             gps.DebugPrintEnabled = true;
-            gps.Enabled = true;
+
+            tempHumidity.DebugPrintEnabled = true;
+            tempHumidity.MeasurementInterval = 2000;
+            tempHumidity.MeasurementComplete += tempHumidity_MeasurementComplete;
+
+            sdCard.Mounted += sdCard_Mounted;
+            sdCard.Unmounted += sdCard_Unmounted;
+
+            if (sdCard.IsCardMounted)
+            {
+                _storage = sdCard.StorageDevice;
+            }
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
+            gps.Enabled = true;
+            _timer.Start();
+            tempHumidity.StartTakingMeasurements();
+        }
+
+        void sdCard_Mounted(SDCard sender, StorageDevice device)
+        {
+            if (sdCard.IsCardMounted)
+            {
+                _storage = sdCard.StorageDevice;
+            }
+        }
+
+        void sdCard_Unmounted(SDCard sender, EventArgs e)
+        {
+            _storage = null;
+
+        }
+
+
+
+        void tempHumidity_MeasurementComplete(TempHumidity sender, TempHumidity.MeasurementCompleteEventArgs e)
+        {
+            _temperature = e.Temperature;
+            _humidity = e.RelativeHumidity;
+
+        }
+
+        void _timer_Tick(Timer timer)
+        {
+            if (gps.Enabled && gps.LastPosition != null)
+            {
+                Debug.Print("Lat :" + gps.LastPosition.Latitude
+                    + " - Long :" + gps.LastPosition.Longitude
+                    + " - Speed : " + gps.LastPosition.SpeedKnots
+                    + " - Age:" + gps.LastPosition.FixTimeUtc.ToString()
+                    + " - Course" + gps.LastPosition.CourseDegrees);
+            }
+            if (_temperature > -1000 && _humidity > -1000)
+            {
+                Debug.Print("Temp :" + _temperature + " - Humidity : " + _humidity);
+            }
+
+            StoreInfo(gps.LastPosition, _temperature, _humidity);
         }
 
         void gps_PositionReceived(GPS sender, GPS.Position e)
@@ -37,12 +105,51 @@ namespace GabTracker
 
         void gps_NmeaSentenceReceived(GPS sender, string e)
         {
-            Debug.Print("NMEA sentence: " + e);
+            //   Debug.Print("NMEA sentence: " + e);
         }
 
         void gps_InvalidPositionReceived(GPS sender, EventArgs e)
         {
             Debug.Print("Invalid Position Received");
+        }
+        void StoreInfo(GPS.Position position, double temperature, double relativeHumidity)
+        {
+            if (_storage != null)
+            {
+                Debug.Print("Storing");
+                try
+                {
+                    string recordPosition;
+                    if (position == null)
+                    {
+                        recordPosition = ";;;;";
+                    }
+                    else
+                    {
+                        recordPosition = position.Latitude + ";"
+                            + position.Longitude + ";"
+                            + position.SpeedKnots + ";"
+                            + position.CourseDegrees + ";"
+                            + position.FixTimeUtc;
+                    }
+                    string tempHumidityRecord = temperature.Round() + ";"
+                        + relativeHumidity.Round();
+
+                    string fullRecord = recordPosition + ";"
+                        + tempHumidityRecord;
+
+                    var sw = new StreamWriter(File.Open(_dataFilePath, FileMode.Append, FileAccess.Write));
+                    sw.WriteLine(fullRecord);
+                    sw.Flush();
+                    sw.Close();
+                    Debug.Print(fullRecord);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print(ex.Message);
+                }
+            }
+
         }
     }
 }
