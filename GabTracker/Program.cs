@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.SPOT.IO;
 using System;
 using GabTracker;
+using Microsoft.SPOT.Hardware;
 
 namespace GabTracker
 {
@@ -100,7 +101,8 @@ namespace GabTracker
 
         void gps_PositionReceived(GPS sender, GPS.Position e)
         {
-            Debug.Print("Position Received");
+            Debug.Print("Position Received - " + e.FixTimeUtc);
+            Utility.SetLocalTime(e.FixTimeUtc);
         }
 
         void gps_NmeaSentenceReceived(GPS sender, string e)
@@ -142,6 +144,7 @@ namespace GabTracker
                     sw.WriteLine(fullRecord);
                     sw.Flush();
                     sw.Close();
+                    Debug.Print("Local time: " + DateTime.Now + " ---- " + DateTime.UtcNow);
                     Debug.Print(fullRecord);
                 }
                 catch (Exception ex)
