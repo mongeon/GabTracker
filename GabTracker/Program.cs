@@ -16,9 +16,9 @@ namespace GabTracker
         Gadgeteer.Timer _timer;
         double _temperature = -10000;
         double _humidity = -10000;
-        private MassStorage _storage;
+        private StorageDevice _storage;
         private bool _SDActivated = false;
-        private static string _dataFilePath = "\\USB\text.txt";// @"\SD\AirQuality.TXT";
+        private static string _dataFilePath = @"\USB\text.txt";// @"\SD\AirQuality.TXT";
         private TimeSpan _blinkInterval = new TimeSpan(0, 0, 0, 0, 100);
 
         private static AutoResetEvent evt = new AutoResetEvent(false);
@@ -56,9 +56,13 @@ namespace GabTracker
             tempHumidity.MeasurementInterval = 2000;
             tempHumidity.MeasurementComplete += tempHumidity_MeasurementComplete;
 
-            Controller.MassStorageConnected += Controller_MassStorageConnected;
-            Controller.Start();
-
+            usbHost.MassStorageMounted += usbHost_MassStorageMounted;
+            usbHost.MassStorageUnmounted += usbHost_MassStorageUnmounted;
+            usbHost.DebugPrintEnabled = true;
+            if (usbHost.IsMassStorageMounted)
+            {
+                _storage = usbHost.MassStorageDevice;
+            }
             SetSDActivated();
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
@@ -68,14 +72,16 @@ namespace GabTracker
             tempHumidity.StartTakingMeasurements();
         }
 
-        void Controller_MassStorageConnected(object sender, MassStorage e)
+        void usbHost_MassStorageUnmounted(USBHost sender, EventArgs e)
         {
-            PulseDebugLED();
-            RemovableMedia.Insert += RemovableMedia_Insert;
-            e.Mount();
-            evt.WaitOne();
-            _storage = e;
+            _storage = null;
         }
+
+        void usbHost_MassStorageMounted(USBHost sender, StorageDevice device)
+        {
+            _storage = device;
+        }
+
 
         void RemovableMedia_Insert(object sender, MediaEventArgs e)
         {
@@ -91,11 +97,11 @@ namespace GabTracker
 
         private void SetSDActivated()
         {
-            if (_SDActivated && ledSDActivated.GetCurrentColor() != Color.Green)
+            if (_SDActivated)
             {
                 ledSDActivated.TurnColor(Color.Green);
             }
-            else if (!_SDActivated && ledSDActivated.GetCurrentColor() != Color.Red)
+            else if (!_SDActivated)
             {
                 ledSDActivated.TurnColor(Color.Red);
             }
@@ -162,20 +168,20 @@ namespace GabTracker
         }
         void StoreInfo(GPS.Position position, double temperature, double relativeHumidity)
         {
-            if (_storage != null && _SDActivated && _storage.Mounted)
+            if (_storage != null && _SDActivated)
             {
                 ledSDActivated.BlinkRepeatedly(Color.Green, _blinkInterval, Color.Blue, _blinkInterval);
                 Debug.Print("Storing");
                 try
                 {
-                    string recordPosition;
+                    string recordPosition = DateTime.Now.ToString() + ";";
                     if (position == null)
                     {
-                        recordPosition = ";;;;";
+                        recordPosition += ";;;;";
                     }
                     else
                     {
-                        recordPosition = position.Latitude + ";"
+                        recordPosition += position.Latitude + ";"
                             + position.Longitude + ";"
                             + position.SpeedKnots + ";"
                             + position.CourseDegrees + ";"
@@ -187,15 +193,21 @@ namespace GabTracker
                     string fullRecord = recordPosition + ";"
                         + tempHumidityRecord;
 
-                    //var sw = new StreamWriter(File.Open(_dataFilePath, FileMode.Append, FileAccess.Write));
+
+                    var files = _storage.ListFiles(_storage.RootDirectory);
+                    //var sw = new StreamWriter(File.Open(_dataFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite));
                     //sw.WriteLine(fullRecord);
                     //sw.Flush();
                     //sw.Close();
 
-                    using (var fs = new FileStream(_dataFilePath, FileMode.OpenOrCreate))
+                    using (var fs = new FileStream(_dataFilePath, FileMode.Append))
                     {
-                        fs.Write(Encoding.UTF8.GetBytes(fullRecord), 0, fullRecord.Length);
+                        byte[] data = Encoding.UTF8.GetBytes(fullRecord + "\r\n");
+                        fs.Write(data, 0, data.Length);
+                        fs.Flush();
+                        fs.Close();
                     }
+                    _storage.Volume.FlushAll();
 
                     Debug.Print("Local time: " + DateTime.Now + " ---- " + DateTime.UtcNow);
                     Debug.Print(fullRecord);
