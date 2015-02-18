@@ -6,18 +6,22 @@ using Microsoft.SPOT.IO;
 using System;
 using GabTracker;
 using Microsoft.SPOT.Hardware;
-
+using GHI.Usb.Host;
+using System.Threading;
+using System.Text;
 namespace GabTracker
 {
     public partial class Program
     {
-        Timer _timer;
+        Gadgeteer.Timer _timer;
         double _temperature = -10000;
         double _humidity = -10000;
-        private StorageDevice _storage;
+        private MassStorage _storage;
         private bool _SDActivated = false;
-        private static string _dataFilePath = @"\SD\AirQuality.TXT";
+        private static string _dataFilePath = "\\USB\text.txt";// @"\SD\AirQuality.TXT";
         private TimeSpan _blinkInterval = new TimeSpan(0, 0, 0, 0, 100);
+
+        private static AutoResetEvent evt = new AutoResetEvent(false);
 
         // This method is run when the mainboard is powered up or reset.   
         void ProgramStarted()
@@ -36,7 +40,7 @@ namespace GabTracker
             *******************************************************************************************/
             Debug.Print("Setting up...");
 
-            _timer = new Timer(5000, Timer.BehaviorType.RunContinuously);
+            _timer = new Gadgeteer.Timer(5000, Gadgeteer.Timer.BehaviorType.RunContinuously);
             _timer.Tick += _timer_Tick;
 
             btnSDToggle.TurnLedOn();
@@ -52,13 +56,9 @@ namespace GabTracker
             tempHumidity.MeasurementInterval = 2000;
             tempHumidity.MeasurementComplete += tempHumidity_MeasurementComplete;
 
-            sdCard.Mounted += sdCard_Mounted;
-            sdCard.Unmounted += sdCard_Unmounted;
+            Controller.MassStorageConnected += Controller_MassStorageConnected;
+            Controller.Start();
 
-            if (sdCard.IsCardMounted)
-            {
-                _storage = sdCard.StorageDevice;
-            }
             SetSDActivated();
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
@@ -66,6 +66,21 @@ namespace GabTracker
             gps.Enabled = true;
             _timer.Start();
             tempHumidity.StartTakingMeasurements();
+        }
+
+        void Controller_MassStorageConnected(object sender, MassStorage e)
+        {
+            PulseDebugLED();
+            RemovableMedia.Insert += RemovableMedia_Insert;
+            e.Mount();
+            evt.WaitOne();
+            _storage = e;
+        }
+
+        void RemovableMedia_Insert(object sender, MediaEventArgs e)
+        {
+            Debug.Print("Inserted");
+            evt.Set();
         }
 
         void btnSDToggle_ButtonReleased(Gadgeteer.Modules.GHIElectronics.Button sender, Gadgeteer.Modules.GHIElectronics.Button.ButtonState state)
@@ -86,20 +101,20 @@ namespace GabTracker
             }
         }
 
-        void sdCard_Mounted(SDCard sender, StorageDevice device)
-        {
-            PulseDebugLED();
-            if (sdCard.IsCardMounted)
-            {
-                _storage = sdCard.StorageDevice;
-            }
-        }
+        //void sdCard_Mounted(SDCard sender, StorageDevice device)
+        //{
+        //    PulseDebugLED();
+        //    if (sdCard.IsCardMounted)
+        //    {
+        //        _storage = sdCard.StorageDevice;
+        //    }
+        //}
 
-        void sdCard_Unmounted(SDCard sender, EventArgs e)
-        {
-            PulseDebugLED();
-            _storage = null;
-        }
+        //void sdCard_Unmounted(SDCard sender, EventArgs e)
+        //{
+        //    PulseDebugLED();
+        //    _storage = null;
+        //}
 
 
 
@@ -110,7 +125,7 @@ namespace GabTracker
             _humidity = e.RelativeHumidity;
         }
 
-        void _timer_Tick(Timer timer)
+        void _timer_Tick(Gadgeteer.Timer timer)
         {
             PulseDebugLED();
             if (gps.Enabled && gps.LastPosition != null)
@@ -147,7 +162,7 @@ namespace GabTracker
         }
         void StoreInfo(GPS.Position position, double temperature, double relativeHumidity)
         {
-            if (_storage != null && _SDActivated)
+            if (_storage != null && _SDActivated && _storage.Mounted)
             {
                 ledSDActivated.BlinkRepeatedly(Color.Green, _blinkInterval, Color.Blue, _blinkInterval);
                 Debug.Print("Storing");
@@ -172,10 +187,16 @@ namespace GabTracker
                     string fullRecord = recordPosition + ";"
                         + tempHumidityRecord;
 
-                    var sw = new StreamWriter(File.Open(_dataFilePath, FileMode.Append, FileAccess.Write));
-                    sw.WriteLine(fullRecord);
-                    sw.Flush();
-                    sw.Close();
+                    //var sw = new StreamWriter(File.Open(_dataFilePath, FileMode.Append, FileAccess.Write));
+                    //sw.WriteLine(fullRecord);
+                    //sw.Flush();
+                    //sw.Close();
+
+                    using (var fs = new FileStream(_dataFilePath, FileMode.OpenOrCreate))
+                    {
+                        fs.Write(Encoding.UTF8.GetBytes(fullRecord), 0, fullRecord.Length);
+                    }
+
                     Debug.Print("Local time: " + DateTime.Now + " ---- " + DateTime.UtcNow);
                     Debug.Print(fullRecord);
                 }
@@ -190,7 +211,7 @@ namespace GabTracker
             }
             else
             {
-                SetSDActivated();                
+                SetSDActivated();
             }
 
         }
