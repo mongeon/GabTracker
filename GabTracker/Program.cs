@@ -17,6 +17,7 @@ namespace GabTracker
         private StorageDevice _storage;
         private bool _SDActivated = false;
         private static string _dataFilePath = @"\SD\AirQuality.TXT";
+        private TimeSpan _blinkInterval = new TimeSpan(0, 0, 0, 0, 100);
 
         // This method is run when the mainboard is powered up or reset.   
         void ProgramStarted()
@@ -34,12 +35,11 @@ namespace GabTracker
                 timer.Start();
             *******************************************************************************************/
             Debug.Print("Setting up...");
-            SetSDActivated();
+
             _timer = new Timer(5000, Timer.BehaviorType.RunContinuously);
             _timer.Tick += _timer_Tick;
 
-
-            btnSDToggle.TurnLedOff();
+            btnSDToggle.TurnLedOn();
             btnSDToggle.Mode = Gadgeteer.Modules.GHIElectronics.Button.LedMode.ToggleWhenReleased;
             btnSDToggle.ButtonReleased += btnSDToggle_ButtonReleased;
 
@@ -59,6 +59,7 @@ namespace GabTracker
             {
                 _storage = sdCard.StorageDevice;
             }
+            SetSDActivated();
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
             gps.Enabled = true;
@@ -144,7 +145,7 @@ namespace GabTracker
         {
             if (_storage != null && _SDActivated)
             {
-                ledSDActivated.BlinkRepeatedly(Color.Green);
+                ledSDActivated.BlinkRepeatedly(Color.Green, _blinkInterval, Color.Blue, _blinkInterval);
                 Debug.Print("Storing");
                 try
                 {
@@ -178,13 +179,14 @@ namespace GabTracker
                 {
                     Debug.Print(ex.Message);
                 }
+                finally
+                {
+                    SetSDActivated();
+                }
             }
             else
             {
-                if (_SDActivated)
-                {
-                    ledSDActivated.BlinkRepeatedly(Color.Green);
-                }
+                SetSDActivated();
             }
 
         }
