@@ -15,6 +15,7 @@ namespace GabTracker
         double _temperature = -10000;
         double _humidity = -10000;
         private StorageDevice _storage;
+        private bool _SDActivated = false;
         private static string _dataFilePath = @"\SD\AirQuality.TXT";
 
         // This method is run when the mainboard is powered up or reset.   
@@ -32,8 +33,14 @@ namespace GabTracker
                 timer.Tick +=<tab><tab>
                 timer.Start();
             *******************************************************************************************/
+            Debug.Print("Setting up...");
             _timer = new Timer(5000, Timer.BehaviorType.RunContinuously);
             _timer.Tick += _timer_Tick;
+
+
+            btnSDToggle.TurnLedOff();
+            btnSDToggle.Mode = Gadgeteer.Modules.GHIElectronics.Button.LedMode.ToggleWhenReleased;
+            btnSDToggle.ButtonReleased += btnSDToggle_ButtonReleased;
 
             gps.InvalidPositionReceived += gps_InvalidPositionReceived;
             gps.NmeaSentenceReceived += gps_NmeaSentenceReceived;
@@ -56,6 +63,11 @@ namespace GabTracker
             gps.Enabled = true;
             _timer.Start();
             tempHumidity.StartTakingMeasurements();
+        }
+
+        void btnSDToggle_ButtonReleased(Gadgeteer.Modules.GHIElectronics.Button sender, Gadgeteer.Modules.GHIElectronics.Button.ButtonState state)
+        {
+            _SDActivated = btnSDToggle.IsLedOn;            
         }
 
         void sdCard_Mounted(SDCard sender, StorageDevice device)

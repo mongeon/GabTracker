@@ -27,6 +27,9 @@ namespace GabTracker {
         /// <summary>The SD Card module using socket 5 of the mainboard.</summary>
         private Gadgeteer.Modules.GHIElectronics.SDCard sdCard;
         
+        /// <summary>The Button module using socket 10 of the mainboard.</summary>
+        private Gadgeteer.Modules.GHIElectronics.Button btnSDToggle;
+        
         /// <summary>This property provides access to the Mainboard API. This is normally not necessary for an end user program.</summary>
         protected new static GHIElectronics.Gadgeteer.FEZSpider Mainboard {
             get {
@@ -53,6 +56,7 @@ namespace GabTracker {
             this.usbClientDP = new GTM.GHIElectronics.USBClientDP(1);
             this.tempHumidity = new GTM.GHIElectronics.TempHumidity(14);
             this.sdCard = new GTM.GHIElectronics.SDCard(5);
+            this.btnSDToggle = new GTM.GHIElectronics.Button(10);
         }
     }
 }
