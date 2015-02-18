@@ -21,6 +21,18 @@ namespace GabTracker {
         /// <summary>The USB Client DP module using socket 1 of the mainboard.</summary>
         private Gadgeteer.Modules.GHIElectronics.USBClientDP usbClientDP;
         
+        /// <summary>The Temp&Humidity module using socket 14 of the mainboard.</summary>
+        private Gadgeteer.Modules.GHIElectronics.TempHumidity tempHumidity;
+        
+        /// <summary>The SD Card module using socket 5 of the mainboard.</summary>
+        private Gadgeteer.Modules.GHIElectronics.SDCard sdCard;
+        
+        /// <summary>The Button module using socket 10 of the mainboard.</summary>
+        private Gadgeteer.Modules.GHIElectronics.Button btnSDToggle;
+        
+        /// <summary>The Multicolor LED module using socket 12 of the mainboard.</summary>
+        private Gadgeteer.Modules.GHIElectronics.MulticolorLED ledSDActivated;
+        
         /// <summary>This property provides access to the Mainboard API. This is normally not necessary for an end user program.</summary>
         protected new static GHIElectronics.Gadgeteer.FEZSpider Mainboard {
             get {
@@ -45,6 +57,10 @@ namespace GabTracker {
         private void InitializeModules() {
             this.gps = new GTM.GHIElectronics.GPS(11);
             this.usbClientDP = new GTM.GHIElectronics.USBClientDP(1);
+            this.tempHumidity = new GTM.GHIElectronics.TempHumidity(14);
+            this.sdCard = new GTM.GHIElectronics.SDCard(5);
+            this.btnSDToggle = new GTM.GHIElectronics.Button(10);
+            this.ledSDActivated = new GTM.GHIElectronics.MulticolorLED(12);
         }
     }
 }
