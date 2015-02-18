@@ -67,7 +67,15 @@ namespace GabTracker
 
         void btnSDToggle_ButtonReleased(Gadgeteer.Modules.GHIElectronics.Button sender, Gadgeteer.Modules.GHIElectronics.Button.ButtonState state)
         {
-            _SDActivated = btnSDToggle.IsLedOn;            
+            _SDActivated = btnSDToggle.IsLedOn;
+            if (_SDActivated && ledSDActivated.GetCurrentColor() != Color.Green)
+            {
+                ledSDActivated.TurnColor(Color.Green);
+            }
+            else if (!_SDActivated && ledSDActivated.GetCurrentColor() != Color.Red)
+            {
+                ledSDActivated.TurnColor(Color.Red);
+            }
         }
 
         void sdCard_Mounted(SDCard sender, StorageDevice device)

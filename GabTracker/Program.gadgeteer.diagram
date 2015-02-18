@@ -90,7 +90,7 @@
         </socketUseShape>
       </nestedChildShapes>
     </moduleShape>
-    <socketConnector Id="1e160d44-0a56-4449-9261-599c9b420645" edgePoints="[(7.36877952401138 : 5.405); (6.265 : 5.405); (6.265 : 4.35358267849573)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <socketConnector Id="1e160d44-0a56-4449-9261-599c9b420645" edgePoints="[(7.36877952401138 : 5.405); (6.265 : 5.405); (6.265 : 4.35358267849573)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <socketUseReferencesSocketMoniker Id="13a756ab-359a-49fd-84c3-03b408152726" />
       <nodes>
         <socketUseShapeMoniker Id="9f2e7f9f-67a8-4d27-a560-4c5f4a68fd69" />
@@ -127,6 +127,25 @@
       <nodes>
         <socketUseShapeMoniker Id="f404653e-5be7-44ce-9546-a9341480f570" />
         <socketShapeMoniker Id="9f547b91-af55-4df2-a586-0348bb7edcf4" />
+      </nodes>
+    </socketConnector>
+    <moduleShape Id="0966de2b-9da5-448a-ba9b-8ef6478a64b4" absoluteBounds="3.48, 3.9, 0.82677165354330717, 0.86614173228346458">
+      <moduleMoniker Id="70d5bff9-ea64-41d8-827b-a7f093598b08" />
+      <relativeChildShapes />
+      <nestedChildShapes>
+        <socketShape Id="0a99430c-b0af-4e69-bad2-c2cf6418e194" absoluteBounds="4.02, 4.3, 0.25, 0.25">
+          <socketMoniker Id="ec10db09-a3a5-40a9-afef-27882c13c0c0" />
+        </socketShape>
+        <socketUseShape Id="dce6379d-6e71-413a-a38e-6a9c363ac9f4" absoluteBounds="3.54, 4.3, 0.25, 0.25">
+          <socketUseMoniker Id="b1f866e5-a928-4b63-98e1-ef6fbe10ff39" />
+        </socketUseShape>
+      </nestedChildShapes>
+    </moduleShape>
+    <socketConnector Id="fe67e4cb-6fc7-4d7a-b0bf-8da70196c361" edgePoints="[(3.665 : 4.66122047598862); (3.665 : 4.925); (5.125 : 4.925); (5.125 : 4.35358267849573)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <socketUseReferencesSocketMoniker Id="4028de2b-4e53-44cb-a918-2ddc7661b703" />
+      <nodes>
+        <socketUseShapeMoniker Id="dce6379d-6e71-413a-a38e-6a9c363ac9f4" />
+        <socketShapeMoniker Id="26bb6932-b6a1-4569-987a-029648ab8b19" />
       </nodes>
     </socketConnector>
   </nestedChildShapes>
