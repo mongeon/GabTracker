@@ -190,7 +190,7 @@ namespace GabTracker
             }
             else
             {
-                SetSDActivated();
+                SetSDActivated();                
             }
 
         }
