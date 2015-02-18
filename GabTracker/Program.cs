@@ -68,7 +68,7 @@ namespace GabTracker
 
         void btnSDToggle_ButtonReleased(Gadgeteer.Modules.GHIElectronics.Button sender, Gadgeteer.Modules.GHIElectronics.Button.ButtonState state)
         {
-            _SDActivated = btnSDToggle.IsLedOn;
+            _SDActivated = !btnSDToggle.IsLedOn;
             SetSDActivated();
         }
 
@@ -142,7 +142,7 @@ namespace GabTracker
         }
         void StoreInfo(GPS.Position position, double temperature, double relativeHumidity)
         {
-            if (_storage != null)
+            if (_storage != null && _SDActivated)
             {
                 Debug.Print("Storing");
                 try
