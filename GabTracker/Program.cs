@@ -34,6 +34,7 @@ namespace GabTracker
                 timer.Start();
             *******************************************************************************************/
             Debug.Print("Setting up...");
+            SetSDActivated();
             _timer = new Timer(5000, Timer.BehaviorType.RunContinuously);
             _timer.Tick += _timer_Tick;
 
@@ -68,6 +69,11 @@ namespace GabTracker
         void btnSDToggle_ButtonReleased(Gadgeteer.Modules.GHIElectronics.Button sender, Gadgeteer.Modules.GHIElectronics.Button.ButtonState state)
         {
             _SDActivated = btnSDToggle.IsLedOn;
+            SetSDActivated();
+        }
+
+        private void SetSDActivated()
+        {
             if (_SDActivated && ledSDActivated.GetCurrentColor() != Color.Green)
             {
                 ledSDActivated.TurnColor(Color.Green);
