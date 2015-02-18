@@ -144,6 +144,7 @@ namespace GabTracker
         {
             if (_storage != null && _SDActivated)
             {
+                ledSDActivated.BlinkRepeatedly(Color.Green);
                 Debug.Print("Storing");
                 try
                 {
@@ -176,6 +177,13 @@ namespace GabTracker
                 catch (Exception ex)
                 {
                     Debug.Print(ex.Message);
+                }
+            }
+            else
+            {
+                if (_SDActivated)
+                {
+                    ledSDActivated.BlinkRepeatedly(Color.Green);
                 }
             }
 
