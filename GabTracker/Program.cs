@@ -62,6 +62,7 @@ namespace GabTracker
             SetSDActivated();
             // Use Debug.Print to show messages in Visual Studio's "Output" window during debugging.
             Debug.Print("Program Started");
+
             gps.Enabled = true;
             _timer.Start();
             tempHumidity.StartTakingMeasurements();
@@ -87,6 +88,7 @@ namespace GabTracker
 
         void sdCard_Mounted(SDCard sender, StorageDevice device)
         {
+            PulseDebugLED();
             if (sdCard.IsCardMounted)
             {
                 _storage = sdCard.StorageDevice;
@@ -95,21 +97,22 @@ namespace GabTracker
 
         void sdCard_Unmounted(SDCard sender, EventArgs e)
         {
+            PulseDebugLED();
             _storage = null;
-
         }
 
 
 
         void tempHumidity_MeasurementComplete(TempHumidity sender, TempHumidity.MeasurementCompleteEventArgs e)
         {
+            PulseDebugLED();
             _temperature = e.Temperature;
             _humidity = e.RelativeHumidity;
-
         }
 
         void _timer_Tick(Timer timer)
         {
+            PulseDebugLED();
             if (gps.Enabled && gps.LastPosition != null)
             {
                 Debug.Print("Lat :" + gps.LastPosition.Latitude
@@ -128,6 +131,7 @@ namespace GabTracker
 
         void gps_PositionReceived(GPS sender, GPS.Position e)
         {
+            PulseDebugLED();
             Debug.Print("Position Received - " + e.FixTimeUtc);
             Utility.SetLocalTime(e.FixTimeUtc);
         }
