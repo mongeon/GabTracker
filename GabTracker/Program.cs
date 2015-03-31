@@ -21,6 +21,8 @@ namespace GabTracker
         private static string _dataFilePath = @"\USB\GabTracker.csv";
         private TimeSpan _blinkInterval = new TimeSpan(0, 0, 0, 0, 100);
 
+        System.Collections.Queue _positionQueue = new System.Collections.Queue();
+
         /// <summary>
         /// This method is run when the mainboard is powered up or reset.
         /// </summary>
@@ -80,7 +82,7 @@ namespace GabTracker
             _SDActivated = value;
             if (_SDActivated)
             {
-                ledSDActivated.TurnColor(Color.Green);
+                ledSDActivated.TurnColor(Color.Orange);
             }
             else if (!_SDActivated)
             {
@@ -110,8 +112,7 @@ namespace GabTracker
             {
                 Debug.Print("Temp :" + _temperature + " - Humidity : " + _humidity);
             }
-
-            StoreInfo(gps.LastPosition, _temperature, _humidity);
+            StoreInfo();
         }
 
         void gps_PositionReceived(GPS sender, GPS.Position e)
@@ -119,68 +120,81 @@ namespace GabTracker
             PulseDebugLED();
             Debug.Print("Position Received - " + e.FixTimeUtc);
             Utility.SetLocalTime(e.FixTimeUtc);
+            _positionQueue.Enqueue(GetDataString(e, _temperature, _humidity));
+                        ledSDActivated.TurnColor(Color.Green);
         }
 
         void gps_InvalidPositionReceived(GPS sender, EventArgs e)
         {
             Debug.Print("Invalid Position Received");
         }
-        void StoreInfo(GPS.Position position, double temperature, double relativeHumidity)
+        void StoreInfo()
         {
             if (_storage != null && _SDActivated)
             {
-                ledSDActivated.BlinkRepeatedly(Color.Green, _blinkInterval, Color.Blue, _blinkInterval);
-                Debug.Print("Storing");
-                try
+                if (_positionQueue.Count > 0)
                 {
-                    string recordPosition = DateTime.Now.ToString() + ";";
-                    if (position == null)
+                    ledSDActivated.BlinkRepeatedly(Color.Green, _blinkInterval, Color.Blue, _blinkInterval);
+                    Debug.Print("Storing");
+                    try
                     {
-                        recordPosition += ";;;;";
+                        string fullRecord = String.Empty;// GetDataString(position, temperature, relativeHumidity);
+
+                        var files = _storage.ListFiles(_storage.RootDirectory);
+                        while (_positionQueue.Count > 0)
+                        {
+                            fullRecord += _positionQueue.Dequeue().ToString() + "\r\n";
+                        }
+
+                        using (var fs = new FileStream(_dataFilePath, FileMode.Append))
+                        {
+                            byte[] data = Encoding.UTF8.GetBytes(fullRecord);
+                            fs.Write(data, 0, data.Length);
+                            fs.Flush();
+                            fs.Close();
+                        }
+
+                        _storage.Volume.FlushAll();
+
+                        Debug.Print("Local time: " + DateTime.Now + " ---- " + DateTime.UtcNow);
+                        Debug.Print(fullRecord);
+
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        recordPosition += position.Latitude + ";"
-                            + position.Longitude + ";"
-                            + position.SpeedKnots + ";"
-                            + position.CourseDegrees + ";"
-                            + position.FixTimeUtc;
+                        Debug.Print(ex.Message);
                     }
-                    string tempHumidityRecord = temperature.Round() + ";"
-                        + relativeHumidity.Round();
-
-                    string fullRecord = recordPosition + ";"
-                        + tempHumidityRecord;
-
-                    var files = _storage.ListFiles(_storage.RootDirectory);
-
-                    using (var fs = new FileStream(_dataFilePath, FileMode.Append))
-                    {
-                        byte[] data = Encoding.UTF8.GetBytes(fullRecord + "\r\n");
-                        fs.Write(data, 0, data.Length);
-                        fs.Flush();
-                        fs.Close();
-                    }
-
-                    _storage.Volume.FlushAll();
-
-                    Debug.Print("Local time: " + DateTime.Now + " ---- " + DateTime.UtcNow);
-                    Debug.Print(fullRecord);
                 }
-                catch (Exception ex)
-                {
-                    Debug.Print(ex.Message);
-                }
-                finally
-                {
-                    SetSDActivated(_SDActivated);
-                }
+                ledSDActivated.TurnColor(Color.Orange);
             }
             else
             {
                 SetSDActivated(false);
             }
 
+        }
+
+        private static string GetDataString(GPS.Position position, double temperature, double relativeHumidity)
+        {
+            string recordPosition = DateTime.Now.ToString() + ";";
+            if (position == null)
+            {
+                recordPosition += ";;;;";
+            }
+            else
+            {
+                recordPosition += position.Latitude + ";"
+                    + position.Longitude + ";"
+                    + position.SpeedKnots + ";"
+                    + position.CourseDegrees + ";"
+                    + position.FixTimeUtc;
+            }
+            string tempHumidityRecord = temperature.Round() + ";"
+                + relativeHumidity.Round();
+
+            string fullRecord = recordPosition + ";"
+                + tempHumidityRecord;
+            return fullRecord;
         }
     }
 }
